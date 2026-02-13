@@ -2,6 +2,9 @@
     --brand: #1d4ed8;
     --brand-dark: #1e3a8a;
     --brand-light: #dbeafe;
+    --accent: #f59e0b;
+    --accent-dark: #d97706;
+    --accent-light: #fef3c7;
     --text-main: #0f172a;
     --text-muted: #475569;
     --bg: #f8fafc;
@@ -77,8 +80,9 @@ button:focus-visible,
     display: inline-flex;
     align-items: center;
     margin-bottom: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.55);
+    background: rgba(245, 158, 11, 0.18);
+    color: #fffbeb;
     border-radius: 999px;
     padding: 0.3rem 0.8rem;
     font-size: 0.85rem;
@@ -239,13 +243,13 @@ button:focus-visible,
 }
 
 .pill {
-    background: var(--brand-light);
-    color: var(--brand-dark);
+    background: var(--accent-light);
+    color: var(--accent-dark);
 }
 
 .tag {
-    background: #eef2ff;
-    color: #3730a3;
+    background: #fff7ed;
+    color: #9a3412;
 }
 
 .seat-status.open {
@@ -306,6 +310,19 @@ button:focus-visible,
 .accordion-button:not(.collapsed) {
     background: var(--brand-light);
     color: var(--brand-dark);
+}
+
+#clear-filters.btn-secondary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+#clear-filters.btn-secondary:hover,
+#clear-filters.btn-secondary:focus {
+    background: var(--accent-dark);
+    border-color: var(--accent-dark);
+    color: #fff;
 }
 
 .site-footer {
