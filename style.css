@@ -1,0 +1,368 @@
+:root {
+    --brand: #1d4ed8;
+    --brand-dark: #1e3a8a;
+    --brand-light: #dbeafe;
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --border: #e2e8f0;
+    --success: #16a34a;
+    --danger: #dc2626;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    background: var(--bg);
+    color: var(--text-main);
+}
+
+a {
+    text-decoration: none;
+}
+
+a:focus-visible,
+button:focus-visible,
+.btn:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible,
+.accordion-button:focus-visible {
+    outline: 3px solid rgba(29, 78, 216, 0.35);
+    outline-offset: 2px;
+}
+
+.site-header {
+    background: linear-gradient(135deg, #0b1324, #1e3a8a);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.site-header .navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.site-header .nav-link {
+    color: rgba(255, 255, 255, 0.88);
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.75rem;
+}
+
+.site-header .nav-link:hover,
+.site-header .nav-link.active {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.hero {
+    min-height: 66vh;
+    display: flex;
+    align-items: center;
+    background:
+        linear-gradient(115deg, rgba(5, 12, 28, 0.86), rgba(30, 58, 138, 0.75)),
+        url("images/campus image.jpg") center/cover no-repeat;
+    color: #fff;
+}
+
+.hero-content {
+    max-width: 720px;
+}
+
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
+    padding: 0.3rem 0.8rem;
+    font-size: 0.85rem;
+}
+
+.hero-content h1 {
+    font-size: clamp(2rem, 4.5vw, 3.2rem);
+    line-height: 1.2;
+    font-weight: 700;
+}
+
+.hero-content p {
+    font-size: 1.05rem;
+    color: rgba(255, 255, 255, 0.95);
+    max-width: 620px;
+}
+
+.hero-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.btn-brand {
+    background: var(--brand);
+    color: #fff;
+    border: 1px solid var(--brand);
+}
+
+.btn-brand:hover,
+.btn-brand:focus {
+    background: var(--brand-dark);
+    border-color: var(--brand-dark);
+    color: #fff;
+}
+
+.btn-outline-brand {
+    border: 1px solid var(--brand);
+    color: var(--brand);
+    background: transparent;
+}
+
+.btn-outline-brand:hover,
+.btn-outline-brand:focus {
+    background: var(--brand);
+    color: #fff;
+}
+
+.section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.section-heading h1,
+.section-heading h2 {
+    margin: 0;
+    font-weight: 700;
+}
+
+.results-count {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.form-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.35rem;
+}
+
+.info-card,
+.content-card,
+.event-card,
+.event-detail-card,
+.registration-item,
+.filter-panel,
+.empty-state {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.info-card {
+    padding: 1rem 1.2rem;
+}
+
+.info-card .label {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.info-card h2 {
+    margin: 0.25rem 0 0;
+    font-size: 2rem;
+    color: var(--brand-dark);
+}
+
+.filter-panel {
+    padding: 1rem;
+}
+
+.event-card {
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.event-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 35px rgba(15, 23, 42, 0.12);
+}
+
+.event-card.is-registered {
+    border-color: #86efac;
+}
+
+.event-card-image {
+    width: 100%;
+    height: 210px;
+    object-fit: cover;
+}
+
+.event-card-body {
+    padding: 1rem;
+}
+
+.registered-indicator {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #166534;
+    background: #dcfce7;
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+}
+
+.meta {
+    color: var(--text-muted);
+    font-size: 0.92rem;
+}
+
+.pill,
+.tag,
+.seat-status {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.2rem 0.65rem;
+}
+
+.pill {
+    background: var(--brand-light);
+    color: var(--brand-dark);
+}
+
+.tag {
+    background: #eef2ff;
+    color: #3730a3;
+}
+
+.seat-status.open {
+    background: #dcfce7;
+    color: var(--success);
+}
+
+.seat-status.full {
+    background: #fee2e2;
+    color: var(--danger);
+}
+
+.event-details-wrapper {
+    width: min(980px, 100%);
+    margin-inline: auto;
+}
+
+.event-detail-card {
+    overflow: hidden;
+}
+
+.event-detail-image {
+    width: 100%;
+    max-height: 420px;
+    object-fit: cover;
+}
+
+.event-detail-content {
+    padding: 1.25rem;
+}
+
+.registration-feedback {
+    font-weight: 600;
+}
+
+.content-card {
+    padding: 1.25rem;
+}
+
+.registration-item {
+    padding: 1rem;
+}
+
+.empty-state {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.loading-state {
+    padding: 1rem 1.2rem;
+    border: 1px dashed var(--border);
+    border-radius: 0.8rem;
+    color: var(--text-muted);
+    background: #f8fbff;
+}
+
+.accordion-button:not(.collapsed) {
+    background: var(--brand-light);
+    color: var(--brand-dark);
+}
+
+.site-footer {
+    margin-top: 3rem;
+    background: #0f172a;
+    color: #cbd5e1;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.site-footer h2 {
+    color: #fff;
+}
+
+@media (max-width: 768px) {
+    .hero {
+        min-height: 54vh;
+    }
+
+    .hero-content {
+        text-align: center;
+    }
+
+    .hero-actions {
+        justify-content: center;
+    }
+
+    .event-card-image {
+        height: 190px;
+    }
+
+    .event-detail-content {
+        padding: 1rem;
+    }
+
+    .filter-panel {
+        padding: 0.9rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .hero {
+        min-height: 50vh;
+    }
+
+    .hero-content p {
+        font-size: 0.98rem;
+    }
+
+    .section-heading {
+        align-items: flex-start;
+    }
+
+    .event-card-image {
+        height: 175px;
+    }
+
+    .site-footer .text-md-end {
+        text-align: left !important;
+    }
+}

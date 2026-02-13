@@ -1,0 +1,108 @@
+{
+  "events": [
+    {
+      "id": 1,
+      "title": "AI & Robotics Future Forum",
+      "date": "2026-03-18T16:00:00Z",
+      "location": "College of Engineering Auditorium",
+      "category": "Technology",
+      "organizer": "KNUST Robotics Club",
+      "capacity": 300,
+      "registered": 184,
+      "description": "Explore the latest innovations in AI, robotics, and embedded systems with faculty researchers and industry speakers.",
+      "tags": ["AI", "Robotics", "Innovation"],
+      "image": "images/image1.jpg"
+    },
+    {
+      "id": 2,
+      "title": "Creative Arts Showcase",
+      "date": "2026-03-20T10:00:00Z",
+      "location": "College of Art and Built Environment Gallery",
+      "category": "Arts",
+      "organizer": "CABE Student Council",
+      "capacity": 220,
+      "registered": 142,
+      "description": "A vibrant exhibition of paintings, installations, and digital media projects created by KNUST student artists.",
+      "tags": ["Exhibition", "Creativity", "Campus Culture"],
+      "image": "images/image2.jpg"
+    },
+    {
+      "id": 3,
+      "title": "Inter-College Sports Festival",
+      "date": "2026-04-05T08:00:00Z",
+      "location": "PaJoe Stadium",
+      "category": "Sports",
+      "organizer": "KNUST Sports Directorate",
+      "capacity": 1200,
+      "registered": 760,
+      "description": "Cheer for your college in football, athletics, and indoor games in the annual KNUST sports celebration.",
+      "tags": ["Sports", "Competition", "Fitness"],
+      "image": "images/image3.jpg"
+    },
+    {
+      "id": 4,
+      "title": "Entrepreneurship Bootcamp",
+      "date": "2026-03-26T09:30:00Z",
+      "location": "Impact Building, Seminar Room 2",
+      "category": "Business",
+      "organizer": "Business Incubator KNUST",
+      "capacity": 160,
+      "registered": 109,
+      "description": "Learn how to validate startup ideas, build business models, and pitch for funding in practical sessions.",
+      "tags": ["Startup", "Pitching", "Business"],
+      "image": "images/image4.jpg"
+    },
+    {
+      "id": 5,
+      "title": "Career Fair & Internship Connect",
+      "date": "2026-04-10T09:00:00Z",
+      "location": "Great Hall Forecourt",
+      "category": "Career",
+      "organizer": "KNUST Career Services",
+      "capacity": 900,
+      "registered": 612,
+      "description": "Meet recruiters from top organizations, access internship opportunities, and get CV review support.",
+      "tags": ["Jobs", "Internships", "Networking"],
+      "image": "images/image5.jpg"
+    },
+    {
+      "id": 6,
+      "title": "Health & Wellness Week Launch",
+      "date": "2026-03-30T07:30:00Z",
+      "location": "University Hospital Grounds",
+      "category": "Wellness",
+      "organizer": "KNUST Health Services",
+      "capacity": 500,
+      "registered": 301,
+      "description": "Kick off wellness week with free health screening, mental health talks, and group fitness sessions.",
+      "tags": ["Health", "Mental Wellness", "Community"],
+      "image": "images/campus image.jpg"
+    },
+    {
+      "id": 7,
+      "title": "Green Campus Sustainability Drive",
+      "date": "2026-04-12T11:00:00Z",
+      "location": "Republic Hall Lawn",
+      "category": "Environment",
+      "organizer": "KNUST Environmental Club",
+      "capacity": 280,
+      "registered": 174,
+      "description": "Join tree planting, recycling workshops, and climate action talks aimed at building a greener KNUST campus.",
+      "tags": ["Climate", "Sustainability", "Volunteering"],
+      "image": "images/image2.jpg"
+    },
+    {
+      "id": 8,
+      "title": "Freshers Cultural Night",
+      "date": "2026-03-22T18:30:00Z",
+      "location": "SRC Amphitheatre",
+      "category": "Culture",
+      "organizer": "SRC Entertainment Committee",
+      "capacity": 650,
+      "registered": 420,
+      "description": "Enjoy performances, dance, spoken word, and multicultural showcases as freshers connect and celebrate.",
+      "tags": ["Music", "Dance", "Campus Life"],
+      "image": "images/image4.jpg"
+    }
+  ]
+}
