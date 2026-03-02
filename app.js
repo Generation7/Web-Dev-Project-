@@ -101,6 +101,41 @@ function saveRegistrationSet(set) {
     localStorage.setItem(REGISTRATION_STORAGE_KEY, JSON.stringify([...set]));
 }
 
+function ensureToastContainer() {
+    let toastRegion = document.getElementById('app-toast-region');
+    if (!toastRegion) {
+        toastRegion = document.createElement('div');
+        toastRegion.id = 'app-toast-region';
+        toastRegion.className = 'app-toast-region';
+        toastRegion.setAttribute('aria-live', 'polite');
+        toastRegion.setAttribute('aria-atomic', 'true');
+        document.body.appendChild(toastRegion);
+    }
+    return toastRegion;
+}
+
+function showToast(message, type = 'success') {
+    if (!message) return;
+    const toastRegion = ensureToastContainer();
+    const toast = document.createElement('div');
+    toast.className = `app-toast ${type === 'error' ? 'error' : 'success'}`;
+    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    toast.textContent = message;
+
+    toastRegion.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        toast.classList.add('show');
+    });
+
+    const removeToast = () => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 220);
+    };
+
+    setTimeout(removeToast, 2800);
+}
+
 function getSeatsLeft(event, registrationSet) {
     const baseRegistered = Number(event.registered || 0);
     const currentRegistered = registrationSet.has(Number(event.id)) ? baseRegistered + 1 : baseRegistered;
@@ -109,8 +144,7 @@ function getSeatsLeft(event, registrationSet) {
 
 function resolveImageSrc(event) {
     const base = event?.image || 'images/campus image.jpg';
-    const cacheKey = `${event?.id || 'x'}-${String(event?.date || '')}`;
-    return `${base}?v=${encodeURIComponent(cacheKey)}`;
+    return encodeURI(base);
 }
 
 function eventCardTemplate(event, registrationSet) {
@@ -120,7 +154,7 @@ function eventCardTemplate(event, registrationSet) {
 
     return `
         <article class="event-card h-100 ${isRegistered ? 'is-registered' : ''}">
-            <img src="${resolveImageSrc(event)}" class="event-card-image" alt="${event.title || 'Event image'}">
+            <img src="${resolveImageSrc(event)}" class="event-card-image" alt="${event.title || 'Event image'}" loading="lazy" onerror="this.onerror=null;this.src='images/campus image.jpg';">
             <div class="event-card-body">
                 <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                     <span class="pill">${event.category || 'General'}</span>
@@ -181,6 +215,7 @@ function renderMyRegistrations(events) {
         .sort((a, b) => new Date(a.date) - new Date(b.date));
 
     if (!registeredEvents.length) {
+        updateRegistrationSummary([], events, registrationSet);
         registrationsContainer.innerHTML = `
             <div class="col-12">
                 <div class="empty-state">
@@ -189,6 +224,17 @@ function renderMyRegistrations(events) {
             </div>
         `;
         return;
+    }
+
+    updateRegistrationSummary(registeredEvents, events, registrationSet);
+
+    const clearButton = document.getElementById('clear-registrations-btn');
+    if (clearButton) {
+        clearButton.onclick = () => {
+            localStorage.removeItem(REGISTRATION_STORAGE_KEY);
+            showToast('All registrations cleared.', 'success');
+            renderMyRegistrations(events);
+        };
     }
 
     registrationsContainer.innerHTML = registeredEvents.map((event) => `
@@ -203,6 +249,29 @@ function renderMyRegistrations(events) {
     `).join('');
 }
 
+function updateRegistrationSummary(registeredEvents, allEvents, registrationSet) {
+    const regCount = document.getElementById('reg-count');
+    const upcomingCount = document.getElementById('reg-upcoming-count');
+    const openCount = document.getElementById('reg-open-count');
+
+    if (!regCount && !upcomingCount && !openCount) return;
+
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+
+    const upcomingThisMonth = registeredEvents.filter((event) => {
+        const d = new Date(event.date);
+        return d.getMonth() === thisMonth && d.getFullYear() === thisYear && d >= now;
+    }).length;
+
+    const openRegistrations = allEvents.filter((event) => getSeatsLeft(event, registrationSet) > 0).length;
+
+    if (regCount) regCount.textContent = String(registeredEvents.length);
+    if (upcomingCount) upcomingCount.textContent = String(upcomingThisMonth);
+    if (openCount) openCount.textContent = String(openRegistrations);
+}
+
 function renderEventsPage(events) {
     const eventsContainer = document.getElementById('events-container');
     if (!eventsContainer) return;
@@ -210,6 +279,7 @@ function renderEventsPage(events) {
     const searchInput = document.getElementById('search-input');
     const dateFilter = document.getElementById('date-filter');
     const categoryFilter = document.getElementById('category-filter');
+    const registrationFilter = document.getElementById('registration-filter');
     const sortFilter = document.getElementById('sort-filter');
     const clearFiltersButton = document.getElementById('clear-filters');
     const resultsCount = document.getElementById('results-count');
@@ -227,6 +297,7 @@ function renderEventsPage(events) {
         const searchTerm = (searchInput?.value || '').trim().toLowerCase();
         const selectedDate = dateFilter?.value;
         const selectedCategory = categoryFilter?.value || 'all';
+        const selectedRegistration = registrationFilter?.value || 'all';
         const selectedSort = sortFilter?.value || 'soonest';
 
         let filtered = events.filter((event) => {
@@ -236,7 +307,13 @@ function renderEventsPage(events) {
             const eventDate = String(event.date).slice(0, 10);
             const matchesDate = !selectedDate || eventDate === selectedDate;
             const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
-            return matchesSearch && matchesDate && matchesCategory;
+            const isRegistered = registrationSet.has(Number(event.id));
+            const matchesRegistration =
+                selectedRegistration === 'all' ||
+                (selectedRegistration === 'registered' && isRegistered) ||
+                (selectedRegistration === 'not-registered' && !isRegistered);
+
+            return matchesSearch && matchesDate && matchesCategory && matchesRegistration;
         });
 
         filtered.sort((a, b) => {
@@ -261,7 +338,7 @@ function renderEventsPage(events) {
         `).join('');
     };
 
-    [searchInput, dateFilter, categoryFilter, sortFilter].forEach((element) => {
+    [searchInput, dateFilter, categoryFilter, registrationFilter, sortFilter].forEach((element) => {
         element?.addEventListener('input', applyFilters);
         element?.addEventListener('change', applyFilters);
     });
@@ -270,6 +347,7 @@ function renderEventsPage(events) {
         if (searchInput) searchInput.value = '';
         if (dateFilter) dateFilter.value = '';
         if (categoryFilter) categoryFilter.value = 'all';
+        if (registrationFilter) registrationFilter.value = 'all';
         if (sortFilter) sortFilter.value = 'soonest';
         applyFilters();
     });
@@ -315,7 +393,7 @@ function renderEventDetails(events, flashMessage = null) {
 
     eventDetailsContainer.innerHTML = `
         <article class="event-detail-card">
-            <img src="${resolveImageSrc(event)}" class="event-detail-image" alt="${event.title || 'Event image'}">
+            <img src="${resolveImageSrc(event)}" class="event-detail-image" alt="${event.title || 'Event image'}" onerror="this.onerror=null;this.src='images/campus image.jpg';">
             <div class="event-detail-content">
                 <div class="d-flex flex-wrap gap-2 mb-3">
                     <span class="pill">${event.category || 'General'}</span>
@@ -342,6 +420,10 @@ function renderEventDetails(events, flashMessage = null) {
     `;
 
     const registerButton = document.getElementById('register-button');
+
+    if (flashMessage?.text) {
+        showToast(flashMessage.text, flashMessage.type === 'error' ? 'error' : 'success');
+    }
 
     registerButton?.addEventListener('click', () => {
         const registrations = getRegistrationSet();
