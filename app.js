@@ -1,11 +1,16 @@
 const REGISTRATION_STORAGE_KEY = 'knustEventHubRegistrations';
+const AUTH_STORAGE_KEY = 'knustEventHubAuthUser';
+const WAITLIST_STORAGE_KEY = 'knustEventHubWaitlist';
+const EVENTS_STORAGE_KEY = 'knustEventHubEventsStore';
 
 document.addEventListener('DOMContentLoaded', async () => {
     await loadLayoutPartials();
+    updateAuthNavigation();
     setActiveNavigation();
+    initLoginPage();
     renderInitialLoadingState();
 
-    const events = await fetchEvents();
+    let events = await fetchEvents();
     if (!events.length) {
         renderGlobalError('Unable to load events at the moment. Please try again later.');
         return;
@@ -15,6 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderEventsPage(events);
     renderEventDetails(events);
     renderMyRegistrations(events);
+    renderAdminPage(events);
 });
 
 async function loadLayoutPartials() {
@@ -50,14 +56,26 @@ function setActiveNavigation() {
 
 async function fetchEvents() {
     try {
+        const cachedEvents = localStorage.getItem(EVENTS_STORAGE_KEY);
+        if (cachedEvents) {
+            const parsed = JSON.parse(cachedEvents);
+            if (Array.isArray(parsed) && parsed.length) return parsed;
+        }
+
         const response = await fetch('events.json', { cache: 'no-store' });
         if (!response.ok) throw new Error('Unable to fetch event data');
         const data = await response.json();
-        return Array.isArray(data.events) ? data.events : [];
+        const events = Array.isArray(data.events) ? data.events : [];
+        saveEventsStore(events);
+        return events;
     } catch (error) {
         console.error('Error fetching events:', error);
         return [];
     }
+}
+
+function saveEventsStore(events) {
+    localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(events));
 }
 
 function renderInitialLoadingState() {
@@ -99,6 +117,101 @@ function getRegistrationSet() {
 
 function saveRegistrationSet(set) {
     localStorage.setItem(REGISTRATION_STORAGE_KEY, JSON.stringify([...set]));
+}
+
+function getCurrentUser() {
+    try {
+        const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch {
+        return null;
+    }
+}
+
+function setCurrentUser(user) {
+    if (!user) {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        return;
+    }
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+}
+
+function getWaitlistMap() {
+    try {
+        const raw = localStorage.getItem(WAITLIST_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+    } catch {
+        return {};
+    }
+}
+
+function saveWaitlistMap(waitlist) {
+    localStorage.setItem(WAITLIST_STORAGE_KEY, JSON.stringify(waitlist));
+}
+
+function getUserIdentifier() {
+    const user = getCurrentUser();
+    return user?.email || null;
+}
+
+function updateAuthNavigation() {
+    const loginLink = document.querySelector('.nav-link[data-page="login"]');
+    const adminLink = document.querySelector('.nav-link[data-page="admin"]');
+    const user = getCurrentUser();
+
+    if (adminLink?.parentElement) {
+        adminLink.parentElement.style.display = user?.role === 'admin' ? '' : 'none';
+    }
+
+    if (!loginLink) return;
+
+    if (user) {
+        loginLink.textContent = `Logout (${user.name})`;
+        loginLink.href = '#';
+        loginLink.onclick = (event) => {
+            event.preventDefault();
+            setCurrentUser(null);
+            showToast('Logged out successfully.', 'success');
+            window.location.href = 'index.html';
+        };
+    } else {
+        loginLink.textContent = 'Login';
+        loginLink.href = 'login.html';
+        loginLink.onclick = null;
+    }
+}
+
+function initLoginPage() {
+    const loginForm = document.getElementById('login-form');
+    const loginStatus = document.getElementById('login-status');
+    if (!loginForm) return;
+
+    const existingUser = getCurrentUser();
+    if (existingUser && loginStatus) {
+        loginStatus.textContent = `Signed in as ${existingUser.name} (${existingUser.role}).`;
+    }
+
+    loginForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const name = document.getElementById('login-name')?.value.trim();
+        const email = document.getElementById('login-email')?.value.trim().toLowerCase();
+        const password = document.getElementById('login-password')?.value;
+        const role = document.getElementById('login-role')?.value || 'student';
+
+        if (!name || !email || !password) {
+            if (loginStatus) loginStatus.textContent = 'Please fill in all fields.';
+            return;
+        }
+
+        setCurrentUser({ name, email, role });
+        updateAuthNavigation();
+        showToast('Login successful.', 'success');
+
+        if (loginStatus) loginStatus.textContent = `Welcome ${name}! Redirecting...`;
+        setTimeout(() => {
+            window.location.href = role === 'admin' ? 'admin.html' : 'index.html';
+        }, 700);
+    });
 }
 
 function ensureToastContainer() {
@@ -249,6 +362,130 @@ function renderMyRegistrations(events) {
     `).join('');
 }
 
+function renderAdminPage(events) {
+    const adminList = document.getElementById('admin-events-list');
+    const adminForm = document.getElementById('admin-event-form');
+    if (!adminList || !adminForm) return;
+
+    const user = getCurrentUser();
+    if (!user || user.role !== 'admin') {
+        adminList.innerHTML = `
+            <div class="empty-state">
+                Admin access required. Please <a href="login.html">login as admin</a>.
+            </div>
+        `;
+        adminForm.querySelectorAll('input, textarea, select, button').forEach((el) => (el.disabled = true));
+        return;
+    }
+
+    const renderAdminList = () => {
+        adminList.innerHTML = events
+            .slice()
+            .sort((a, b) => Number(a.id) - Number(b.id))
+            .map(
+                (event) => `
+            <article class="registration-item mb-3">
+                <div class="d-flex justify-content-between flex-wrap gap-2 align-items-start">
+                    <div>
+                        <h3 class="h6 mb-1">${event.title}</h3>
+                        <p class="meta mb-1"><strong>ID:</strong> ${event.id} | <strong>Date:</strong> ${formatDate(event.date)}</p>
+                        <p class="meta mb-0"><strong>Category:</strong> ${event.category || 'General'} | <strong>Capacity:</strong> ${event.capacity || 0}</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-brand admin-edit-btn" data-id="${event.id}">Edit</button>
+                        <button class="btn btn-sm btn-outline-danger admin-delete-btn" data-id="${event.id}">Delete</button>
+                    </div>
+                </div>
+            </article>
+        `
+            )
+            .join('');
+    };
+
+    renderAdminList();
+
+    adminForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const editId = Number(document.getElementById('admin-event-id')?.value || 0);
+        const formData = {
+            id: editId || Math.max(0, ...events.map((e) => Number(e.id) || 0)) + 1,
+            title: document.getElementById('admin-title')?.value.trim(),
+            date: document.getElementById('admin-date')?.value,
+            location: document.getElementById('admin-location')?.value.trim(),
+            category: document.getElementById('admin-category')?.value.trim(),
+            organizer: document.getElementById('admin-organizer')?.value.trim(),
+            capacity: Number(document.getElementById('admin-capacity')?.value || 0),
+            registered: Number(document.getElementById('admin-registered')?.value || 0),
+            description: document.getElementById('admin-description')?.value.trim(),
+            tags: (document.getElementById('admin-tags')?.value || '')
+                .split(',')
+                .map((tag) => tag.trim())
+                .filter(Boolean),
+            image: document.getElementById('admin-image')?.value.trim() || 'images/campus image.jpg'
+        };
+
+        if (!formData.title || !formData.date || !formData.location) {
+            showToast('Title, date, and location are required.', 'error');
+            return;
+        }
+
+        const index = events.findIndex((item) => Number(item.id) === Number(formData.id));
+        if (index >= 0) {
+            events[index] = formData;
+            showToast('Event updated successfully.', 'success');
+        } else {
+            events.push(formData);
+            showToast('Event created successfully.', 'success');
+        }
+
+        saveEventsStore(events);
+        adminForm.reset();
+        const idField = document.getElementById('admin-event-id');
+        if (idField) idField.value = '';
+        renderAdminList();
+    });
+
+    document.getElementById('admin-cancel-edit')?.addEventListener('click', () => {
+        adminForm.reset();
+        const idField = document.getElementById('admin-event-id');
+        if (idField) idField.value = '';
+    });
+
+    adminList.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+
+        if (target.classList.contains('admin-delete-btn')) {
+            const id = Number(target.dataset.id);
+            const nextEvents = events.filter((item) => Number(item.id) !== id);
+            events.splice(0, events.length, ...nextEvents);
+            saveEventsStore(events);
+            showToast('Event deleted.', 'success');
+            renderAdminList();
+            return;
+        }
+
+        if (target.classList.contains('admin-edit-btn')) {
+            const id = Number(target.dataset.id);
+            const item = events.find((eventItem) => Number(eventItem.id) === id);
+            if (!item) return;
+
+            document.getElementById('admin-event-id').value = item.id;
+            document.getElementById('admin-title').value = item.title || '';
+            document.getElementById('admin-date').value = String(item.date || '').slice(0, 16);
+            document.getElementById('admin-location').value = item.location || '';
+            document.getElementById('admin-category').value = item.category || '';
+            document.getElementById('admin-organizer').value = item.organizer || '';
+            document.getElementById('admin-capacity').value = item.capacity || 0;
+            document.getElementById('admin-registered').value = item.registered || 0;
+            document.getElementById('admin-description').value = item.description || '';
+            document.getElementById('admin-tags').value = (item.tags || []).join(', ');
+            document.getElementById('admin-image').value = item.image || '';
+            showToast('Edit mode enabled for selected event.', 'success');
+        }
+    });
+}
+
 function updateRegistrationSummary(registeredEvents, allEvents, registrationSet) {
     const regCount = document.getElementById('reg-count');
     const upcomingCount = document.getElementById('reg-upcoming-count');
@@ -387,9 +624,13 @@ function renderEventDetails(events, flashMessage = null) {
     }
 
     const registrationSet = getRegistrationSet();
+    const waitlistMap = getWaitlistMap();
+    const userId = getUserIdentifier();
     const isRegistered = registrationSet.has(Number(event.id));
     const seatsLeft = getSeatsLeft(event, registrationSet);
     const isFull = seatsLeft <= 0;
+    const waitlistUsers = waitlistMap[String(event.id)] || [];
+    const inWaitlist = userId ? waitlistUsers.includes(userId) : false;
 
     eventDetailsContainer.innerHTML = `
         <article class="event-detail-card">
@@ -403,6 +644,7 @@ function renderEventDetails(events, flashMessage = null) {
                 <p class="meta mb-2"><strong>Date:</strong> ${formatDate(event.date)}</p>
                 <p class="meta mb-2"><strong>Location:</strong> ${event.location || 'Location TBA'}</p>
                 <p class="meta mb-3"><strong>Organizer:</strong> ${event.organizer || 'KNUST Community'}</p>
+                <p class="meta mb-3"><strong>Waitlist:</strong> ${waitlistUsers.length} student(s)</p>
                 <p class="lead mb-3">${event.description || 'Details for this event will be updated soon.'}</p>
                 <div class="d-flex flex-wrap gap-2 mb-4">
                     ${(event.tags || []).map((tag) => `<span class="tag">#${tag}</span>`).join('')}
@@ -412,6 +654,7 @@ function renderEventDetails(events, flashMessage = null) {
                     <button id="register-button" class="btn ${isRegistered ? 'btn-outline-danger' : 'btn-brand'}" ${(!isRegistered && isFull) ? 'disabled' : ''}>
                         ${isRegistered ? 'Cancel Registration' : 'Register'}
                     </button>
+                    ${isFull && !isRegistered ? `<button id="waitlist-button" class="btn ${inWaitlist ? 'btn-outline-danger' : 'btn-outline-brand'}">${inWaitlist ? 'Leave Waitlist' : 'Join Waitlist'}</button>` : ''}
                     <a href="events.html" class="btn btn-outline-brand">Back to Events</a>
                 </div>
                 <p id="registration-feedback" class="registration-feedback ${flashMessage?.type === 'error' ? 'text-danger' : flashMessage?.type === 'success' ? 'text-success' : ''} mt-3">${flashMessage?.text || ''}</p>
@@ -420,6 +663,7 @@ function renderEventDetails(events, flashMessage = null) {
     `;
 
     const registerButton = document.getElementById('register-button');
+    const waitlistButton = document.getElementById('waitlist-button');
 
     if (flashMessage?.text) {
         showToast(flashMessage.text, flashMessage.type === 'error' ? 'error' : 'success');
@@ -451,6 +695,33 @@ function renderEventDetails(events, flashMessage = null) {
                 type: 'success',
                 text: 'You are registered! A confirmation has been saved locally.'
             });
+        }
+    });
+
+    waitlistButton?.addEventListener('click', () => {
+        const currentUserId = getUserIdentifier();
+        if (!currentUserId) {
+            showToast('Please login first to join the waitlist.', 'error');
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 600);
+            return;
+        }
+
+        const latestWaitlist = getWaitlistMap();
+        const key = String(event.id);
+        const users = new Set(latestWaitlist[key] || []);
+
+        if (users.has(currentUserId)) {
+            users.delete(currentUserId);
+            latestWaitlist[key] = [...users];
+            saveWaitlistMap(latestWaitlist);
+            renderEventDetails(events, { type: 'success', text: 'You left the waitlist.' });
+        } else {
+            users.add(currentUserId);
+            latestWaitlist[key] = [...users];
+            saveWaitlistMap(latestWaitlist);
+            renderEventDetails(events, { type: 'success', text: 'You joined the waitlist successfully.' });
         }
     });
 }

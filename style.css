@@ -327,6 +327,15 @@ button:focus-visible,
     padding: 1.25rem;
 }
 
+.auth-card {
+    max-width: 680px;
+}
+
+.admin-grid-note {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
 .registration-item {
     padding: 1rem;
 }
