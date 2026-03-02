@@ -11,7 +11,7 @@
       "registered": 184,
       "description": "Explore the latest innovations in AI, robotics, and embedded systems with faculty researchers and industry speakers.",
       "tags": ["AI", "Robotics", "Innovation"],
-      "image": "images/event-ai-robotics.jpg"
+      "image": "images/image1.jpg"
     },
     {
       "id": 2,
@@ -24,7 +24,7 @@
       "registered": 142,
       "description": "A vibrant exhibition of paintings, installations, and digital media projects created by KNUST student artists.",
       "tags": ["Exhibition", "Creativity", "Campus Culture"],
-      "image": "images/event-creative-arts.jpg"
+      "image": "images/image2.jpg"
     },
     {
       "id": 3,
@@ -37,7 +37,7 @@
       "registered": 760,
       "description": "Cheer for your college in football, athletics, and indoor games in the annual KNUST sports celebration.",
       "tags": ["Sports", "Competition", "Fitness"],
-      "image": "images/event-sports-festival.jpg"
+      "image": "images/image3.jpg"
     },
     {
       "id": 4,
@@ -50,7 +50,7 @@
       "registered": 109,
       "description": "Learn how to validate startup ideas, build business models, and pitch for funding in practical sessions.",
       "tags": ["Startup", "Pitching", "Business"],
-      "image": "images/event-entrepreneurship.jpg"
+      "image": "images/image4.jpg"
     },
     {
       "id": 5,
@@ -63,7 +63,7 @@
       "registered": 612,
       "description": "Meet recruiters from top organizations, access internship opportunities, and get CV review support.",
       "tags": ["Jobs", "Internships", "Networking"],
-      "image": "images/event-career-fair.jpg"
+      "image": "images/image5.jpg"
     },
     {
       "id": 6,
@@ -76,7 +76,7 @@
       "registered": 301,
       "description": "Kick off wellness week with free health screening, mental health talks, and group fitness sessions.",
       "tags": ["Health", "Mental Wellness", "Community"],
-      "image": "images/event-health-wellness.jpg"
+      "image": "images/campus image.jpg"
     },
     {
       "id": 7,
@@ -89,7 +89,7 @@
       "registered": 174,
       "description": "Join tree planting, recycling workshops, and climate action talks aimed at building a greener KNUST campus.",
       "tags": ["Climate", "Sustainability", "Volunteering"],
-      "image": "images/event-green-campus.jpg"
+      "image": "images/image2.jpg"
     },
     {
       "id": 8,
@@ -102,7 +102,7 @@
       "registered": 420,
       "description": "Enjoy performances, dance, spoken word, and multicultural showcases as freshers connect and celebrate.",
       "tags": ["Music", "Dance", "Campus Life"],
-      "image": "images/event-cultural-night.jpg"
+      "image": "images/image4.jpg"
     }
   ]
 }
