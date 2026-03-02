@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderEventDetails(events);
     renderMyRegistrations(events);
     renderAdminPage(events);
+    initFrontendChatbot(events);
 });
 
 async function loadLayoutPartials() {
@@ -830,4 +831,151 @@ function renderGlobalError(message) {
     targets.forEach((element) => {
         element.innerHTML = `<div class="empty-state" role="alert">${message}</div>`;
     });
+}
+
+function initFrontendChatbot(events) {
+    if (document.getElementById('chatbot-toggle')) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'chatbot-wrapper';
+    wrapper.innerHTML = `
+        <button id="chatbot-toggle" class="chatbot-toggle" aria-expanded="false" aria-controls="chatbot-panel">💬 Ask EventBot</button>
+        <section id="chatbot-panel" class="chatbot-panel d-none" aria-label="Campus assistant chatbot">
+            <header class="chatbot-header">
+                <h2>EventBot</h2>
+                <button id="chatbot-close" class="chatbot-close" aria-label="Close chatbot">×</button>
+            </header>
+            <div id="chatbot-messages" class="chatbot-messages" aria-live="polite"></div>
+            <div class="chatbot-quick-actions" id="chatbot-quick-actions">
+                <button type="button" data-q="What events are coming up?">Upcoming events</button>
+                <button type="button" data-q="Show me technology events">Technology events</button>
+                <button type="button" data-q="How many events am I registered for?">My registrations</button>
+            </div>
+            <form id="chatbot-form" class="chatbot-form">
+                <input id="chatbot-input" type="text" placeholder="Ask about events, registration, or help..." autocomplete="off" required>
+                <button type="submit">Send</button>
+            </form>
+        </section>
+    `;
+
+    document.body.appendChild(wrapper);
+
+    const toggle = document.getElementById('chatbot-toggle');
+    const panel = document.getElementById('chatbot-panel');
+    const closeBtn = document.getElementById('chatbot-close');
+    const form = document.getElementById('chatbot-form');
+    const input = document.getElementById('chatbot-input');
+    const messages = document.getElementById('chatbot-messages');
+    const quickActions = document.getElementById('chatbot-quick-actions');
+
+    const addMessage = (sender, text) => {
+        if (!messages) return;
+        const row = document.createElement('div');
+        row.className = `chat-message ${sender}`;
+        row.innerHTML = `<p>${text}</p>`;
+        messages.appendChild(row);
+        messages.scrollTop = messages.scrollHeight;
+    };
+
+    const openChat = () => {
+        if (!panel || !toggle) return;
+        panel.classList.remove('d-none');
+        toggle.setAttribute('aria-expanded', 'true');
+        if (!messages?.children.length) {
+            addMessage('bot', 'Hi 👋 I’m EventBot. Ask me about upcoming events, categories, registrations, or waitlist info.');
+        }
+        input?.focus();
+    };
+
+    const closeChat = () => {
+        if (!panel || !toggle) return;
+        panel.classList.add('d-none');
+        toggle.setAttribute('aria-expanded', 'false');
+    };
+
+    toggle?.addEventListener('click', () => {
+        if (panel?.classList.contains('d-none')) openChat();
+        else closeChat();
+    });
+
+    closeBtn?.addEventListener('click', closeChat);
+
+    quickActions?.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLButtonElement)) return;
+        const question = target.dataset.q;
+        if (!question) return;
+        addMessage('user', question);
+        addMessage('bot', getChatbotReply(question, events));
+    });
+
+    form?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const question = input?.value.trim();
+        if (!question) return;
+        addMessage('user', question);
+        addMessage('bot', getChatbotReply(question, events));
+        if (input) input.value = '';
+    });
+}
+
+function getChatbotReply(question, events) {
+    const q = question.toLowerCase();
+    const registrationSet = getRegistrationSet();
+
+    if (q.includes('hello') || q.includes('hi') || q.includes('hey')) {
+        return 'Hello! You can ask me things like: “upcoming events”, “technology events”, or “how many events am I registered for?”.';
+    }
+
+    if (q.includes('upcoming') || q.includes('coming up') || q.includes('next event')) {
+        const upcoming = [...events]
+            .sort((a, b) => new Date(a.date) - new Date(b.date))
+            .slice(0, 3)
+            .map((event) => `${event.title} (${formatDate(event.date)})`);
+        return upcoming.length
+            ? `Top upcoming events: ${upcoming.join(' • ')}`
+            : 'No upcoming events found right now.';
+    }
+
+    if (q.includes('registered') || q.includes('my registration')) {
+        const count = events.filter((event) => registrationSet.has(Number(event.id))).length;
+        return count
+            ? `You are currently registered for ${count} event${count > 1 ? 's' : ''}. Check “My Registrations” page for details.`
+            : 'You have no registrations yet. Visit Events to register.';
+    }
+
+    if (q.includes('category') || q.includes('technology') || q.includes('sports') || q.includes('arts') || q.includes('business')) {
+        const categories = [...new Set(events.map((event) => event.category).filter(Boolean))];
+        const matched = categories.find((category) => q.includes(category.toLowerCase()));
+        if (matched) {
+            const matches = events
+                .filter((event) => event.category === matched)
+                .slice(0, 4)
+                .map((event) => event.title);
+            return matches.length
+                ? `${matched} events: ${matches.join(' • ')}`
+                : `No events found in ${matched} right now.`;
+        }
+        return `Available categories include: ${categories.join(', ')}.`;
+    }
+
+    if (q.includes('waitlist')) {
+        return 'If an event is full, open its details page and use the “Join Waitlist” button. You must be logged in first.';
+    }
+
+    if (q.includes('admin')) {
+        return 'Admin tools are on the Admin page. Login as role “Admin” to create, edit, or delete events.';
+    }
+
+    const keyword = q.split(' ').find((word) => word.length > 3);
+    if (keyword) {
+        const found = events.find((event) =>
+            `${event.title} ${event.location} ${event.category}`.toLowerCase().includes(keyword)
+        );
+        if (found) {
+            return `I found “${found.title}” at ${found.location} on ${formatDate(found.date)}. Open Events page to view details.`;
+        }
+    }
+
+    return 'I can help with upcoming events, categories, registrations, waitlist, and admin info. Try asking: “What events are coming up?”';
 }
