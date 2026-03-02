@@ -2,6 +2,7 @@ const REGISTRATION_STORAGE_KEY = 'knustEventHubRegistrations';
 const AUTH_STORAGE_KEY = 'knustEventHubAuthUser';
 const WAITLIST_STORAGE_KEY = 'knustEventHubWaitlist';
 const EVENTS_STORAGE_KEY = 'knustEventHubEventsStore';
+const USERS_STORAGE_KEY = 'knustEventHubUsers';
 
 document.addEventListener('DOMContentLoaded', async () => {
     await loadLayoutPartials();
@@ -136,6 +137,20 @@ function setCurrentUser(user) {
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
 }
 
+function getStoredUsers() {
+    try {
+        const raw = localStorage.getItem(USERS_STORAGE_KEY);
+        const users = raw ? JSON.parse(raw) : [];
+        return Array.isArray(users) ? users : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveStoredUsers(users) {
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+}
+
 function getWaitlistMap() {
     try {
         const raw = localStorage.getItem(WAITLIST_STORAGE_KEY);
@@ -183,8 +198,38 @@ function updateAuthNavigation() {
 
 function initLoginPage() {
     const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
     const loginStatus = document.getElementById('login-status');
+    const loginPanel = document.getElementById('login-panel');
+    const signupPanel = document.getElementById('signup-panel');
+    const showLoginButton = document.getElementById('show-login');
+    const showSignupButton = document.getElementById('show-signup');
+
     if (!loginForm) return;
+
+    const activateTab = (tab) => {
+        const loginActive = tab === 'login';
+        if (loginPanel) loginPanel.classList.toggle('d-none', !loginActive);
+        if (signupPanel) signupPanel.classList.toggle('d-none', loginActive);
+
+        if (showLoginButton) {
+            showLoginButton.classList.toggle('btn-brand', loginActive);
+            showLoginButton.classList.toggle('btn-outline-brand', !loginActive);
+            showLoginButton.classList.toggle('active', loginActive);
+            showLoginButton.setAttribute('aria-selected', String(loginActive));
+        }
+
+        if (showSignupButton) {
+            showSignupButton.classList.toggle('btn-brand', !loginActive);
+            showSignupButton.classList.toggle('btn-outline-brand', loginActive);
+            showSignupButton.classList.toggle('active', !loginActive);
+            showSignupButton.setAttribute('aria-selected', String(!loginActive));
+        }
+    };
+
+    showLoginButton?.addEventListener('click', () => activateTab('login'));
+    showSignupButton?.addEventListener('click', () => activateTab('signup'));
+    activateTab('login');
 
     const existingUser = getCurrentUser();
     if (existingUser && loginStatus) {
@@ -193,21 +238,69 @@ function initLoginPage() {
 
     loginForm.addEventListener('submit', (event) => {
         event.preventDefault();
-        const name = document.getElementById('login-name')?.value.trim();
         const email = document.getElementById('login-email')?.value.trim().toLowerCase();
         const password = document.getElementById('login-password')?.value;
         const role = document.getElementById('login-role')?.value || 'student';
+        const users = getStoredUsers();
+        const account = users.find((user) => user.email === email && user.role === role);
 
-        if (!name || !email || !password) {
+        if (!email || !password) {
             if (loginStatus) loginStatus.textContent = 'Please fill in all fields.';
             return;
         }
 
-        setCurrentUser({ name, email, role });
+        if (!account || account.password !== password) {
+            if (loginStatus) loginStatus.textContent = 'Invalid credentials. Please check your details or sign up first.';
+            showToast('Login failed. Invalid credentials.', 'error');
+            return;
+        }
+
+        setCurrentUser({ name: account.name, email: account.email, role: account.role });
         updateAuthNavigation();
         showToast('Login successful.', 'success');
 
-        if (loginStatus) loginStatus.textContent = `Welcome ${name}! Redirecting...`;
+        if (loginStatus) loginStatus.textContent = `Welcome ${account.name}! Redirecting...`;
+        setTimeout(() => {
+            window.location.href = role === 'admin' ? 'admin.html' : 'index.html';
+        }, 700);
+    });
+
+    signupForm?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const name = document.getElementById('signup-name')?.value.trim();
+        const email = document.getElementById('signup-email')?.value.trim().toLowerCase();
+        const password = document.getElementById('signup-password')?.value;
+        const role = document.getElementById('signup-role')?.value || 'student';
+
+        if (!name || !email || !password) {
+            if (loginStatus) loginStatus.textContent = 'Please complete all signup fields.';
+            return;
+        }
+
+        if (password.length < 6) {
+            if (loginStatus) loginStatus.textContent = 'Password must be at least 6 characters.';
+            showToast('Use a stronger password (minimum 6 characters).', 'error');
+            return;
+        }
+
+        const users = getStoredUsers();
+        const exists = users.some((user) => user.email === email && user.role === role);
+
+        if (exists) {
+            if (loginStatus) loginStatus.textContent = 'An account with this email and role already exists.';
+            showToast('Account already exists. Please login.', 'error');
+            return;
+        }
+
+        users.push({ name, email, password, role, createdAt: new Date().toISOString() });
+        saveStoredUsers(users);
+        setCurrentUser({ name, email, role });
+        updateAuthNavigation();
+        showToast('Signup successful. You are now logged in.', 'success');
+
+        if (loginStatus) loginStatus.textContent = `Account created for ${name}. Redirecting...`;
+        signupForm.reset();
+
         setTimeout(() => {
             window.location.href = role === 'admin' ? 'admin.html' : 'index.html';
         }, 700);
