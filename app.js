@@ -847,9 +847,10 @@ function initFrontendChatbot(events) {
             </header>
             <div id="chatbot-messages" class="chatbot-messages" aria-live="polite"></div>
             <div class="chatbot-quick-actions" id="chatbot-quick-actions">
-                <button type="button" data-q="What events are coming up?">Upcoming events</button>
-                <button type="button" data-q="Show me technology events">Technology events</button>
-                <button type="button" data-q="How many events am I registered for?">My registrations</button>
+                <button type="button" data-q="What events are coming up at KNUST?">Upcoming events</button>
+                <button type="button" data-q="Suggest an event category for me">Suggest category</button>
+                <button type="button" data-q="I want technology events">Technology events</button>
+                <button type="button" data-q="How do I register for an event?">How to register</button>
             </div>
             <form id="chatbot-form" class="chatbot-form">
                 <input id="chatbot-input" type="text" placeholder="Ask about events, registration, or help..." autocomplete="off" required>
@@ -882,7 +883,7 @@ function initFrontendChatbot(events) {
         panel.classList.remove('d-none');
         toggle.setAttribute('aria-expanded', 'true');
         if (!messages?.children.length) {
-            addMessage('bot', 'Hi 👋 I’m EventBot. Ask me about upcoming events, categories, registrations, or waitlist info.');
+            addMessage('bot', 'Hi 👋 I’m EventBot for KNUST Event Hub. I can help with event ideas, categories, registration, waitlist, and locations.');
         }
         input?.focus();
     };
@@ -920,62 +921,123 @@ function initFrontendChatbot(events) {
 }
 
 function getChatbotReply(question, events) {
-    const q = question.toLowerCase();
+    const userInput = String(question || '').toLowerCase().trim();
     const registrationSet = getRegistrationSet();
+    const categories = [...new Set(events.map((event) => String(event.category || '')).filter(Boolean))];
 
-    if (q.includes('hello') || q.includes('hi') || q.includes('hey')) {
-        return 'Hello! You can ask me things like: “upcoming events”, “technology events”, or “how many events am I registered for?”.';
+    const findEventsByCategory = (categoryName) =>
+        events.filter((event) => String(event.category || '').toLowerCase() === categoryName.toLowerCase());
+
+    // Greetings
+    if (
+        userInput.includes('hello') ||
+        userInput.includes('hi') ||
+        userInput.includes('hey') ||
+        userInput.includes('good morning') ||
+        userInput.includes('good afternoon')
+    ) {
+        return 'Hi there! I can help with KNUST events, categories, registration, waitlist, and admin info.';
     }
 
-    if (q.includes('upcoming') || q.includes('coming up') || q.includes('next event')) {
+    // Suggest events or categories
+    else if (
+        userInput.includes('suggest event') ||
+        userInput.includes('event ideas') ||
+        userInput.includes('what events') ||
+        userInput.includes('recommend event') ||
+        userInput.includes('suggest category')
+    ) {
+        return 'Great options include: Technology, Arts, Sports, Business, Career, Wellness, Environment, and Culture.';
+    }
+
+    // Upcoming list
+    else if (userInput.includes('upcoming') || userInput.includes('coming up') || userInput.includes('next event')) {
         const upcoming = [...events]
             .sort((a, b) => new Date(a.date) - new Date(b.date))
             .slice(0, 3)
             .map((event) => `${event.title} (${formatDate(event.date)})`);
-        return upcoming.length
-            ? `Top upcoming events: ${upcoming.join(' • ')}`
-            : 'No upcoming events found right now.';
+        return upcoming.length ? `Top upcoming events: ${upcoming.join(' • ')}` : 'No upcoming events found right now.';
     }
 
-    if (q.includes('registered') || q.includes('my registration')) {
+    // Registrations
+    else if (userInput.includes('registered') || userInput.includes('my registration')) {
         const count = events.filter((event) => registrationSet.has(Number(event.id))).length;
         return count
-            ? `You are currently registered for ${count} event${count > 1 ? 's' : ''}. Check “My Registrations” page for details.`
+            ? `You are currently registered for ${count} event${count > 1 ? 's' : ''}. Check “My Registrations” for details.`
             : 'You have no registrations yet. Visit Events to register.';
     }
 
-    if (q.includes('category') || q.includes('technology') || q.includes('sports') || q.includes('arts') || q.includes('business')) {
-        const categories = [...new Set(events.map((event) => event.category).filter(Boolean))];
-        const matched = categories.find((category) => q.includes(category.toLowerCase()));
-        if (matched) {
-            const matches = events
-                .filter((event) => event.category === matched)
-                .slice(0, 4)
-                .map((event) => event.title);
-            return matches.length
-                ? `${matched} events: ${matches.join(' • ')}`
-                : `No events found in ${matched} right now.`;
+    // Registration process
+    else if (userInput.includes('how do i register') || userInput.includes('registration process') || userInput.includes('register for')) {
+        return 'To register: open Events → click View Details → click Register. If full, click Join Waitlist.';
+    }
+
+    // Waitlist
+    else if (userInput.includes('waitlist')) {
+        return 'If an event is full, open its details page and use Join Waitlist. You must login first.';
+    }
+
+    // Admin
+    else if (userInput.includes('admin') || userInput.includes('create event') || userInput.includes('edit event')) {
+        return 'Admin actions are on the Admin page. Login as role “Admin” to create, edit, or delete events.';
+    }
+
+    // Category-specific replies
+    else if (userInput.includes('technology') || userInput.includes('ai') || userInput.includes('robotics')) {
+        const matches = findEventsByCategory('Technology').slice(0, 4).map((event) => event.title);
+        return matches.length ? `Technology events: ${matches.join(' • ')}` : 'No Technology events available now.';
+    }
+
+    else if (userInput.includes('arts') || userInput.includes('creative') || userInput.includes('exhibition')) {
+        const matches = findEventsByCategory('Arts').slice(0, 4).map((event) => event.title);
+        return matches.length ? `Arts events: ${matches.join(' • ')}` : 'No Arts events available now.';
+    }
+
+    else if (userInput.includes('sports') || userInput.includes('football') || userInput.includes('fitness')) {
+        const matches = findEventsByCategory('Sports').slice(0, 4).map((event) => event.title);
+        return matches.length ? `Sports events: ${matches.join(' • ')}` : 'No Sports events available now.';
+    }
+
+    else if (userInput.includes('business') || userInput.includes('startup') || userInput.includes('entrepreneur')) {
+        const matches = findEventsByCategory('Business').slice(0, 4).map((event) => event.title);
+        return matches.length ? `Business events: ${matches.join(' • ')}` : 'No Business events available now.';
+    }
+
+    else if (userInput.includes('career') || userInput.includes('job') || userInput.includes('internship')) {
+        const matches = findEventsByCategory('Career').slice(0, 4).map((event) => event.title);
+        return matches.length ? `Career events: ${matches.join(' • ')}` : 'No Career events available now.';
+    }
+
+    else if (userInput.includes('wellness') || userInput.includes('health') || userInput.includes('mental')) {
+        const matches = findEventsByCategory('Wellness').slice(0, 4).map((event) => event.title);
+        return matches.length ? `Wellness events: ${matches.join(' • ')}` : 'No Wellness events available now.';
+    }
+
+    else if (userInput.includes('environment') || userInput.includes('green') || userInput.includes('sustainability')) {
+        const matches = findEventsByCategory('Environment').slice(0, 4).map((event) => event.title);
+        return matches.length ? `Environment events: ${matches.join(' • ')}` : 'No Environment events available now.';
+    }
+
+    else if (userInput.includes('culture') || userInput.includes('cultural') || userInput.includes('music') || userInput.includes('dance')) {
+        const matches = findEventsByCategory('Culture').slice(0, 4).map((event) => event.title);
+        return matches.length ? `Culture events: ${matches.join(' • ')}` : 'No Culture events available now.';
+    }
+
+    else if (userInput.includes('thanks') || userInput.includes('thank you') || userInput.includes('okay') || userInput.includes('alright')) {
+        return 'You’re welcome! 😊 Ask me about upcoming events or any category.';
+    }
+
+    // Generic keyword search
+    else {
+        const keyword = userInput.split(' ').find((word) => word.length > 3);
+        if (keyword) {
+            const found = events.find((event) =>
+                `${event.title} ${event.location} ${event.category}`.toLowerCase().includes(keyword)
+            );
+            if (found) {
+                return `I found “${found.title}” at ${found.location} on ${formatDate(found.date)}. Open Events to view details.`;
+            }
         }
-        return `Available categories include: ${categories.join(', ')}.`;
+        return `I can help with upcoming events, registration, waitlist, and categories like: ${categories.join(', ')}.`;
     }
-
-    if (q.includes('waitlist')) {
-        return 'If an event is full, open its details page and use the “Join Waitlist” button. You must be logged in first.';
-    }
-
-    if (q.includes('admin')) {
-        return 'Admin tools are on the Admin page. Login as role “Admin” to create, edit, or delete events.';
-    }
-
-    const keyword = q.split(' ').find((word) => word.length > 3);
-    if (keyword) {
-        const found = events.find((event) =>
-            `${event.title} ${event.location} ${event.category}`.toLowerCase().includes(keyword)
-        );
-        if (found) {
-            return `I found “${found.title}” at ${found.location} on ${formatDate(found.date)}. Open Events page to view details.`;
-        }
-    }
-
-    return 'I can help with upcoming events, categories, registrations, waitlist, and admin info. Try asking: “What events are coming up?”';
 }
